@@ -1,0 +1,12 @@
+[
+    {"id":1, "name":"Producto 1","price":1000, "thumbnail":"img1"},
+    {"id":2, "name":"Producto 2","price":2000, "thumbnail":"img2"},
+    {"id":3, "name":"Producto 3","price":3000, "thumbnail":"img3"},
+    {"id":4, "name":"Producto 4","price":4000, "thumbnail":"img4"},
+    {"id":5, "name":"Producto 5","price":5000, "thumbnail":"img5"},
+    {"id":6, "name":"Producto 6","price":6000, "thumbnail":"img6"},
+    {"id":7, "name":"Producto 7","price":7000, "thumbnail":"img7"},
+    {"id":8, "name":"Producto 8","price":8000, "thumbnail":"img8"},
+    {"id":9, "name":"Producto 9","price":9000, "thumbnail":"img9"},
+    {"id":10," name":"Producto 10","price":10000, "thumbnail":"img10"}
+]
