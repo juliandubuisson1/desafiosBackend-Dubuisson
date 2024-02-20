@@ -1,36 +1,63 @@
-import express from 'express' 
-import fs from 'fs'
+/* import express from "express";
+import http from "http";
 
-//CONSTANTES
-const port = 8080
-const app = express()
-const proudctsData = fs.readFileSync('./products.json', 'utf-8')
-const products = JSON.parse (proudctsData)
+import cartRouter from "./routes/cart.router.js";
 
+const app = express();
+const server = http.createServer(app);
 
+app.use(express.json())
 
-app.get("/products", (req, res) => {
-    const { limit } = req.query;
-    let data = products;
+app.use("/api/carts", cartRouter);
 
-    if (limit) {
-        data = data.slice(0, parseInt(limit));
-    }
+server.listen(8080,() => {
+    console.log("Servidor corriendo en puerto 8080");
+}) */
 
-    res.send(data);
+import express from 'express';
+import bodyParser from 'body-parser';
+import productRouter from "./routes/product.router.js";
+// 👇️ if you use CommonJS require()
+// const express = require('express');
+// const bodyParser = require('body-parser');
+
+const app = express();
+app.use("/api/products", productRouter);
+// ✅ Register the bodyParser middleware here
+app.use(bodyParser.json());
+app.use(
+    bodyParser.urlencoded({
+        extended: true,
+    }),
+);
+
+/* productRouter.post('/add', function (req, res) {
+  // ✅ req.body is an object here
+    console.log('req.body: ', req.body);
+
+    console.log(`
+        title:          ${req.body.title},
+        description:    ${req.body.description},
+        code:           ${req.body.code},
+        price:          ${req.body.price},
+        stock:          ${req.body.stock},
+        category:       ${req.body.category},
+        thumbnail:      ${req.body.thumbnail},`
+    );
+
+    res.send(
+        `title:          ${req.body.title},
+        description:    ${req.body.description},
+        code:           ${req.body.code},
+        price:          ${req.body.price},
+        stock:          ${req.body.stock},
+        category:       ${req.body.category},
+        thumbnail:      ${req.body.thumbnail},`
+    );
+}); */
+
+const port = 8080;
+
+app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`);
 });
-
-
-app.get("/products/:productId", (req, res) => {
-    const productId = req.params.productId;
-    const product = products.find((producto) => producto.id == productId);
-
-    if (!product) {
-        return res.send("Producto no encontrado");
-    }
-
-    res.send(product);
-});
-
-
-app.listen(port, () => console.log("Servidor corriendo en", port))

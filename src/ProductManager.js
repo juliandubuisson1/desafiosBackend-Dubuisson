@@ -1,128 +1,68 @@
 import {promises as fs} from 'fs'
-const PATH = './productos.json'
+import { randomUUID } from 'node:crypto'
 
+export class ProductManager{
 
-class ProductManager {
-
-    constructor (){
-        this.PATH = []
+    constructor(){
+        this.path = 'products.json';
+        this.products = []
     }
 
-    static id = 0
+    addProduct = async ({title,description,code,price,status,stock,category,thumbnails}) =>{
+        console.log(addProduct);
 
-    addProduct = async (title, description, price, thumbnail, code, stock) =>{
-        
+        const id = randomUUID()
 
-        for(let i = 0; i < this.PATH.length; i++){
-            if (this.PATH [i].code === code){
-                console.log(`El codigo ${code}, esta repetido`);
-                break
-            }
-        }
+        let newProduct = {id, title,description,code,price,status,stock,category,thumbnails}
 
-        ProductManager.id++
-        const newProduct = {
-            title,
-            description,
-            price,
-            thumbnail, 
-            code,
-            stock,
-            id: ProductManager.id
-        }
+        this.products.push(newProduct)
 
-        this.PATH.push(newProduct)
+        await fs.writeFile(this.path, JSON.stringify(this.products))
 
-        await fs.writeFile (PATH, JSON.stringify(this.PATH), 'utf-8') 
-
-        if(!Object.values (newProduct).includes(undefined)){
-            ProductManager.id++;
-            this.PATH.push({
-                ...newProduct,
-                id:ProductManager.id 
-            });
-        } else {
-            console.log("Todos los campos son requeridos");
-        }        
-        
-    };
-
-
-    readProducts = async () => {
-        let result = await fs.readFile(PATH, 'utf-8')
-        return JSON.parse(result)
-        
-    }
-    
-    
-    getProdcuts = async () => {
-        let resultGetProducts = await this.readProducts()
-        return console.log(resultGetProducts);
+        return newProduct
     }
 
-    getProductsById = async (id) => {
+    getProducts = async () => {
+        const response = await fs.readFile(this.path, 'utf-8')
+        const responseJSON = JSON.parse(response)
 
-        let resultProductById = await this.readProducts()
-        if (!resultProductById.find (producto => producto.id === id)){
-            console.log("ID no encontrado");
+        return responseJSON
+    }
+
+    getProductsById = async (id) =>{
+        const response = this.getProducts()
+
+        const product = response.find(product => product.id === id)
+
+        if(product) {
+            return product
         }else {
-            
-            console.log(resultProductById.find(producto => producto.id === id));
+            console.log('Producto no encontrado');
+        }
+    }
+
+    updateProduct = async (id, {...data}) => {
+        const response = this.getProducts()
+        const index = response.findeIndex(product => product.id === id)
+
+        if(index != -1 ){
+            response[index] = {id, ...data}
+            await fs.writeFile(this.path, JSON.stringify(response))
+            return response [index]
+        }else{
+            console.log('Producto no encontrado');
         }
     }
 
     deleteProduct = async (id) => {
-        let resultProductById = await this.readProducts();
-        let productFilter = resultProductById.filter((products => products.id != id));
-        await fs.writeFile(PATH, JSON.stringify(productFilter), 'utf-8')
-        console.log("El producto fue eliminado");
+        const products = this.getProducts()
+        const index = products.findeIndex(product => product.id === id)
+
+        if(index != -1){
+            products.splice(idnex, 1)
+            await fs.writeFile(this.path, JSON.stringify(product))
+        }else{
+            console.log('Producto no encontrado');
+        }
     }
-
-    updateProduct = async (id, ...producto) => {
-        await this.deleteProduct(id);
-        let productUpdate = await this.readProducts();
-        let productoMod = [{...producto, id,}, ...productUpdate]
-        await fs.writeFile(PATH, JSON.stringify(productoMod))
-    };
 }
-
-const productos = new ProductManager()
-
-//LLAMADA AL ARRAY VACIO
-
-console.log(productos.getProdcuts());
-
-//AGREGAR PRODUCTOS 
-
-productos.addProduct('producto prueba', 'Este es un producto prueba', 200, 'Sin imagen', 'abc123', 25)
-
-//GETPRODUCTS
-
-console.log(productos.getProdcuts());
-
-//BUSQUEDA DE ID NO ENCONTRADO
-
-productos.getProductsById(8);
-
-//BUSQUEDA DE ID
-
-productos.getProductsById(1)
-
-//ACTUALIAR PRODUCTO
-
-productos.updateProduct({
-    title: 'producto prueba',
-    description:'Este es un producto prueba',
-    price: 300,
-    thumbnail:'Sin imagen', 
-    code:'abc123',
-    stock: 25,
-    id:2
-})
-
-
-//ELIMINAR PRODUCTO
-
-productos.deleteProduct()
-
-export default ProductManager;
