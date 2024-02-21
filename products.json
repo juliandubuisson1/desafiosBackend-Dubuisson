@@ -1,139 +1,24 @@
 [
   {
     "id": 1,
-    "name": "Producto 1",
-    "price": 1000,
-    "thumbnail": "img1"
+    "title": "Titulo del producto 1",
+    "description": "Descripción del producto 1",
+    "code": "Código del producto 1",
+    "price": 300,
+    "status": true,
+    "stock": 60,
+    "category": "Categoría del producto 1",
+    "thumbnail": "URL de la miniatura del producto 1"
   },
   {
     "id": 2,
-    "name": "Producto 2",
-    "price": 2000,
-    "thumbnail": "img2"
-  },
-  {
-    "id": 3,
-    "name": "Producto 3",
-    "price": 3000,
-    "thumbnail": "img3"
-  },
-  {
-    "id": 4,
-    "name": "Producto 4",
-    "price": 4000,
-    "thumbnail": "img4"
-  },
-  {
-    "id": 5,
-    "name": "Producto 5",
-    "price": 5000,
-    "thumbnail": "img5"
-  },
-  {
-    "id": 6,
-    "name": "Producto 6",
-    "price": 6000,
-    "thumbnail": "img6"
-  },
-  {
-    "id": 7,
-    "name": "Producto 7",
-    "price": 7000,
-    "thumbnail": "img7"
-  },
-  {
-    "id": 8,
-    "name": "Producto 8",
-    "price": 8000,
-    "thumbnail": "img8"
-  },
-  {
-    "id": 9,
-    "name": "Producto 9",
-    "price": 9000,
-    "thumbnail": "img9"
-  },
-  {
-    "id": 10,
-    " name": "Producto 10",
-    "price": 10000,
-    "thumbnail": "img10"
-  },
-  {
-    "id": 11,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
+    "title": "Titulo del producto 2",
+    "description": "Descripción del producto 2",
+    "code": "Código del producto 2",
+    "price": 300,
     "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 12,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 13,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 14,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 15,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 16,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
-  },
-  {
-    "id": 17,
-    "title": "Título del producto",
-    "description": "Descripción del producto",
-    "code": "Código del producto",
-    "price": 200,
-    "status": true,
-    "stock": 50,
-    "category": "Categoría del producto",
-    "thumbnail": "URL de la miniatura del producto"
+    "stock": 60,
+    "category": "Categoría del producto 2",
+    "thumbnail": "URL de la miniatura del producto 2"
   }
 ]

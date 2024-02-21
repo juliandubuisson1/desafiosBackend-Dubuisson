@@ -5,6 +5,7 @@ const productRouter = express.Router();
 
 productRouter.use(express.json());
 
+
 productRouter.get("/", async (req, res) => {
     try {
         const limit = req.query.limit ? parseInt(req.query.limit) : null;
@@ -21,6 +22,7 @@ productRouter.get("/", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
 
 productRouter.get("/:pid", async (req, res) => {
     try {
@@ -39,6 +41,8 @@ productRouter.get("/:pid", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
+//POST
 
 productRouter.post("/add", async (req, res) =>{
 try{
@@ -94,7 +98,7 @@ productos.push(newProduct);
 
 
 res.send(
-    `title:          ${req.body.title},
+    `title:         ${req.body.title},
     description:    ${req.body.description},
     code:           ${req.body.code},
     price:          ${req.body.price},
@@ -103,50 +107,62 @@ res.send(
     thumbnail:      ${req.body.thumbnail},`
 );
 }catch (error){
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json("Error al agregar el producto");
 }    
 }); 
 
+
+//PUT
 productRouter.put("/update/:pid", async (req, res) => {
     try {
         const pid = parseInt(req.params.pid);
         const updateFields = req.body;
-        
+    
+        // Validar que se envíen campos a actualizar
         if (!Object.keys(updateFields).length) {
-            return res.status(400).json({ error: "No fields to update provided" });
+        return res.status(400).json({ error: 'No se enviaron campos a actualizar' });
         }
-
-        const rawData = fs.readFileSync("./products.json");
+    
+        // Leer archivo JSON de productos
+        const rawData = fs.readFileSync('./products.json');
         let productos = JSON.parse(rawData);
-
+    
+        // Buscar el producto a actualizar
         const index = productos.findIndex(producto => producto.id === pid);
-        
+    
+        // Si no se encuentra el producto, devolver error 404
         if (index === -1) {
-            return res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({ error: 'Producto no encontrado' });
         }
-
-        // Copia el producto encontrado para actualizarlo
+    
+        // Crear copia del producto para actualizar
         const updatedProduct = { ...productos[index] };
-
-        // Actualiza los campos proporcionados en el cuerpo de la solicitud
+    
+        // Recorrer campos a actualizar
         for (const field in updateFields) {
-            if (field !== "id") { // Evita actualizar el campo "id"
-                updatedProduct[field] = updateFields[field];
-            }
+          // Evitar actualizar el "id"
+        if (field !== 'id') {
+            updatedProduct[field] = updateFields[field];
         }
-
-        // Actualiza el producto en el array de productos
+        }
+    
+        // Actualizar el array
         productos[index] = updatedProduct;
-
-        // Guarda el array actualizado de productos en el archivo JSON
-        fs.writeFileSync("./products.json", JSON.stringify(productos, null, 2));
-
-        res.json({ message: "Product updated successfully", product: updatedProduct });
+    
+        // Guardar archivo JSON con productos actualizados
+        fs.writeFileSync('./products.json', JSON.stringify(productos, null, 2));
+    
+        // Enviar respuesta exitosa
+        res.json({ message: 'Producto actualizado exitosamente', product: updatedProduct });
     } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error(error);
+        res.status(500).json("Error al actualizar");
     }
+    
 });
 
+
+//DELETE
 productRouter.delete("/delete/:pid", async (req, res) => {
     try {
         const pid = parseInt(req.params.pid);
@@ -168,7 +184,7 @@ productRouter.delete("/delete/:pid", async (req, res) => {
 
         res.json({ message: "Producto eliminado exitosamente" });
     } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json("Error al eliminar el producto");
     }
 });
 
