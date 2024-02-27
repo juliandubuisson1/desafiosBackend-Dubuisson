@@ -1,102 +1,45 @@
-import express from "express";
-import fs from "fs";
-
+//const express = require('express');
+import express from 'express'
 const cartRouter = express.Router();
+//const CartManager = required ('../managers/carts.manager.js');
+import CartManager from '../managers/cart.manager.js'
+const cartManager = new CartManager();
 
-cartRouter.use(express.json());
-
-cartRouter.post("/", async (req, res) => {
-    try {
-        const rawData = fs.readFileSync("./carrito.json");
-        const carritos = JSON.parse(rawData);
-        
-        // Genera un nuevo ID autoincrementable
-        const newCartId = carritos.length + 1;
-        
-        // Verifica si el cuerpo de la solicitud contiene la lista de productos
-        if (!req.body || !req.body.products || !Array.isArray(req.body.products)) {
-            return res.status(400).json({ error: "Campos vacios o invalidos en el request.body.products" });
-        }
-
-        // Estructura del nuevo carrito
-        const newCart = {
-            id: newCartId,
-            products: req.body.products
-        };
-        
-        // Agrega el nuevo carrito al array de carritos
-        carritos.push(newCart);
-        
-        // Guarda el array actualizado de carritos en el archivo JSON
-        fs.writeFileSync("./carrito.json", JSON.stringify(carritos, null, 2));
-
-        res.status(201).json({ message: "Carrito creado exitosamente", cart: newCart });
-    } catch (error) {
-        console.error("Error al crear el carrito:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
-
-
+// GET /api/carts/:cid
 cartRouter.get("/:cid", async (req, res) => {
     try {
-        const cid = parseInt(req.params.cid);
-        
-        const rawData = fs.readFileSync("carrito.js");
-        const carritos = JSON.parse(rawData);
-        
-        const cart = carritos.find(cart => cart.id === cid);
-        
-        if (!cart) {
-            res.status(404).json({ error: "Carrito no encontrado" });
-        } else {
-            res.json(cart);
-        }
+        const cid = req.params.cid;
+        const cart = await cartManager.getCartById(cid);
+        res.send({ status: "success", payload: cart });
     } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        console.log(error);
+        res.status(500).send({ status: "error",  error: error.message});
     }
 });
 
-cartRouter.post("/:cid/product/:pid", async (req, res) => {
+// POST /api/carts
+cartRouter.post("/", async (req, res) => {
     try {
-        const cid = parseInt(req.params.cid);
-        const pid = parseInt(req.params.pid);
-        const { quantity } = req.body;
-
-        if (!quantity || isNaN(quantity) || quantity <= 0) {
-            return res.status(400).json({ error: "Cantidad invalida" });
-        }
-
-        const rawData = fs.readFileSync("carrito.json");
-        let carritos = JSON.parse(rawData);
-
-        const cartIndex = carritos.findIndex(cart => cart.id === cid);
-
-        if (cartIndex === -1) {
-            return res.status(404).json({ error: "Carrito no encontrado" });
-        }
-
-        const productToAdd = {
-            product: pid,
-            quantity: parseInt(quantity)
-        };
-
-        const existingProductIndex = carritos[cartIndex].products.findIndex(item => item.product === pid);
-
-        if (existingProductIndex !== -1) {
-            // Si el producto ya existe en el carrito, se actualiza la cantidad
-            carritos[cartIndex].products[existingProductIndex].quantity += parseInt(quantity);
-        } else {
-            // Si el producto no existe en el carrito, se agrega al arreglo de productos
-            carritos[cartIndex].products.push(productToAdd);
-        }
-
-        fs.writeFileSync("carrito.json", JSON.stringify(carritos, null, 2));
-
-        res.json({ message: "Producto agregado al carrito exitosamente", cart: carritos[cartIndex] });
+        const newCart = await cartManager.createCart();
+        res.status(201).send({ status: "success", payload: newCart });
     } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
+        console.log(error);
+        res.status(500).send({ status: "error",  error: error.message });
     }
 });
 
-export default cartRouter;
+// POST /api/carts/:cid/product/:pid
+cartRouter.post("/:cid/product/:pid", async (req, res) => {
+    const { cid, pid } = req.params;
+    const { quantity } = req.body;
+
+    try {
+        const updatedCart = await cartManager.addProductsToCart(cid, pid, quantity);
+        res.status(201).send({ status: "success", payload: updatedCart });
+    } catch (error) {
+        res.status(500).send({ status: "error",  error: error.message });
+    }
+});
+
+//module.exports = cartRouter;
+export default cartRouter

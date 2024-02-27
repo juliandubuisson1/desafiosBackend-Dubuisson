@@ -1,0 +1,24 @@
+[
+	{
+		"id": 1,
+		"title": "Titulo del producto 1",
+		"description": "Descripción del producto 1",
+		"code": "Código del producto 1",
+		"price": 300,
+		"status": true,
+		"stock": 60,
+		"category": "Categoría del producto 1",
+		"thumbnail": "URL de la miniatura del producto 1"
+	},
+	{
+		"id": 2,
+		"title": "Titulo del producto 2",
+		"description": "Descripción del producto 2",
+		"code": "Código del producto 2",
+		"price": 300,
+		"status": true,
+		"stock": 60,
+		"category": "Categoría del producto 2",
+		"thumbnail": "URL de la miniatura del producto 2"
+	}
+]
