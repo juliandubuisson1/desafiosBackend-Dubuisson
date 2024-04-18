@@ -1,33 +1,129 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const productFsRouter = require('./routes/file_routes/products.route.js')
-const cartFsRouter = require ('./routes/file_routes/carts.route.js')
-const productRoutes = require ('./routes/db_routes/products.route.js')
-const cartRoutes = require ('./routes/db_routes/carts.route.js')
-const multer = require('./utils');
+import express from "express"
+import mongoose from "mongoose"; 
+import mongoose from "mongoose"
+import http from "http";
+import Handlebars from "handlebars";
+import handlebars from "express-handlebars";
+import { Server } from "socket.io";
+import bodyParser from "body-parser";
+import __dirname from "./utils.js";
+import path from "path";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import FileStore from "session-file-store";
+import MongoStore from "connect-mongo";
+import passport from "./config/jwt.js";
+import router from "./routes.js";
+import auth from "./config/auth.js";
+import { MONGO_URL } from "./util.js";
 
-//Funciones
-const app = express();
-
-//Middlewares
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-
-//FileSystem
-app.use('/fs/products', productFsRouter);
-app.use('/fs/carts', cartFsRouter);
-//MongoDB
-app.use('/api/products', productRoutes);
-app.use('/api/carts', cartRoutes);
-
-
-const PORT = 8080; 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+Handlebars.registerHelper('eq', function (a, b, options) {
+    return a === b ? options.fn(this) : options.inverse(this);
 });
 
-const connectMongoDB = async ()=>{
+const fileStore = FileStore(session);
+const app = express();
+const httpServer = http.createServer(app);
+
+// Inicializar Passport
+auth.initializePassport();
+
+// Middleware para analizar el cuerpo de la solicitud JSON
+app.use(express.json());
+
+// Middleware para utilizar cookies
+app.use(cookieParser());
+
+// Middleware para usar el session para autenticaciones de usuarios
+app.use(session({
+    store: MongoStore.create({
+        mongoUrl: MONGO_URL,
+        ttl: 15,
+    }),
+    secret: "secret_key",
+    resave: false,
+    saveUninitialized: false,
+}))
+
+
+mongoose.connect(MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+const db = mongoose.connection;
+
+db.on("error", (err) => {
+    console.error("Error de conexión a MongoDB:", err);
+});
+
+db.once("open", () => {
+    console.log("Conexión a MongoDB exitosa");
+});
+
+// Middleware adicional para analizar el cuerpo de la solicitud JSON en cartRouter
+app.use(bodyParser.json());
+
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware de Passport para la autenticación de sesión
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Middleware para utilizar plantillas html
+app.engine("handlebars", handlebars.engine());
+app.set("views", __dirname + "/views");
+app.set("view engine", "handlebars");
+app.use(express.static(path.join(__dirname, 'public')));
+app.use("/", router);
+
+const PORT = 8080;
+
+// Servidor HTTP
+httpServer.listen(PORT, () => {
+    console.log("Servidor conectado!!");
+});
+
+// Servidor WebSocket
+const io = new Server(httpServer);
+
+io.on('connection', socket => {
+    console.log("Nuevo cliente conectado!!");
+
+    socket.on("deleteProduct", (deleteProductId) => {
+        console.log("Producto borrado:", deleteProductId);
+        io.emit("deleteProduct", deleteProductId);
+    });
+
+    socket.on("addProduct", (addProduct) => {
+        console.log("Producto agregado:", addProduct);
+        io.emit("addProduct", addProduct);
+    });
+
+    socket.on("addMessage", (addMessage) => {
+        console.log("Mensaje agregado", addMessage);
+        io.emit("addMessage", addMessage);
+    });
+
+    socket.on("deleteProductCart", (deleteProductCartId) => {
+        console.log("Producto eliminado del carrito", deleteProductCartId);
+        io.emit("deleteProductCart", deleteProductCartId);
+    });
+
+    socket.on("clearCart", (clearCart) => {
+        console.log("Carrito vaciado:", clearCart);
+        io.emit("clearCart", clearCart);
+    });
+});
+
+
+
+
+
+
+
+
+/* const connectMongoDB = async ()=>{
     const stringConnection = ("mongodb+srv://julianDubuisson:<password>@cluster0.gtbwigq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     try {
         await mongoose.connect(stringConnection);
@@ -36,5 +132,4 @@ const connectMongoDB = async ()=>{
         console.error("No se pudo conectar a la BD usando Moongose: " + error);
         process.exit();
     }
-};
-connectMongoDB();
+}; */
