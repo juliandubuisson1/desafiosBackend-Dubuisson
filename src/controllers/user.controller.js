@@ -1,6 +1,6 @@
-import User from "../models/user.model.js";
+import User from "../models/mongo_models/Users.model.js";
 import bcrypt from "bcrypt";
-import { generateAuthToken } from "../../config/auth.js";
+import { generateAuthToken } from "../config/auth.js";
 import passport from "passport";
 
 const userController = {
@@ -27,17 +27,15 @@ const userController = {
                 // Generar token JWT
                 const access_token = generateAuthToken(user);
 
-                res.cookie("jwt", access_token, { httpOnly: true });
-
                 req.session.userId = user._id;
-
                 req.session.user = user;
-
                 req.session.isAuthenticated = true;
 
                 console.log("Datos del login:", user, "token:", access_token);
 
-                return res.redirect("/api/products/");
+                res.cookie("jwtToken", access_token, {
+                    httpOnly: true,
+                }).send({ status: "Success", message: user, access_token, userId: user._id });
             })(req, res, next);
 
         } catch (error) {
@@ -77,8 +75,6 @@ const userController = {
 
             const access_token = generateAuthToken(newUser);
 
-            res.cookie("jwt", access_token, { httpOnly: true });
-
             req.session.userId = newUser._id;
 
             req.session.user = newUser;
@@ -87,7 +83,9 @@ const userController = {
 
             console.log("Datos del registro:", newUser, "token:", access_token);
 
-            return res.redirect("/api/products");
+            res.cookie("jwtToken", access_token, {
+                httpOnly: true,
+            }).send({ status: "Success", message: newUser, access_token, userId: newUser._id });
 
         } catch (error) {
             console.error("Error al registrar usuario:", error);
@@ -101,32 +99,40 @@ const userController = {
 
     // Redirige al usuario a la página de inicio después de iniciar sesión con GitHub
     handleGitHubCallback: async (req, res) => {
-        const access_token = generateAuthToken(req.user);
+        const user = req.user;
+        try {
+            // Genera el token de acceso
+            const access_token = generateAuthToken(user);
 
-        // Establecer la cookie jwt con el token
-        res.cookie("jwt", access_token, { httpOnly: true });
+            // Establece la sesión del usuario
+            req.session.userId = user._id;
+            req.session.user = user;
+            req.session.isAuthenticated = true;
 
-        // Establecer la sesión del usuario
-        req.session.userId = req.user._id;
-        req.session.user = req.user;
-        req.session.isAuthenticated = true;
+            console.log("Token login github:", access_token);
 
-        // Redirigir al usuario a una página después de la autenticación exitosa
-        res.redirect("/api/products");
+            // Envia la respuesta con el token de acceso al frontend
+            res.cookie("jwtToken", access_token, {
+                httpOnly: true,
+            }).send({ status: "Success", message: user, access_token, userId: user._id });
+        } catch (error) {
+            console.error('Error en el callback de GitHub:', error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
     },
 
     logOut: async (req, res) => {
         try {
-            res.clearCookie("jwt");
             req.session.userId = null;
             req.session.user = null;
             req.session.isAuthenticated = false;
-            return res.json({message: "Logout funciona"});
+            res.clearCookie("jwtToken");
+            return res.json({ message: "Logout funciona" });
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
             res.status(500).json({ error: "Error interno del servidor" });
         }
-    }    
+    }
 }
 
 export default userController;

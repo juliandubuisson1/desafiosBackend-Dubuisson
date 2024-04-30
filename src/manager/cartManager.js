@@ -1,26 +1,26 @@
 import fs from "fs";
-import { getCartFilePath } from "../../util.js";
+import { getCartFilePath } from "../utils.js";
 
 const jsonFilePath = getCartFilePath();
 
 // Función para leer datos del archivo JSON
 const readJsonFile = () => {
-  try {
+try {
     const jsonData = fs.readFileSync(jsonFilePath);
     return jsonData.length > 0 ? JSON.parse(jsonData) : [];
-  } catch (error) {
+} catch (error) {
     console.error("Error al leer el archivo JSON:", error);
     return [];
-  }
+}
 };
 
 // Función para escribir datos en el archivo JSON
 const writeJsonFile = (data) => {
-  try {
+try {
     fs.writeFileSync(jsonFilePath, JSON.stringify(data, null, 2));
-  } catch (error) {
+} catch (error) {
     console.error("Error al escribir en el archivo JSON:", error);
-  }
+}
 };
 
 

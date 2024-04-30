@@ -2,9 +2,10 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import GitHubStrategy from "passport-github2";
 import jwt from "jsonwebtoken";
-import User from "../dao/models/user.model.js";
+import User from "../models/mongo_models/Users.model.js";
 import bcrypt from "bcrypt";
-import { JWT_SECRET, CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../util.js";
+import config from "./config.js";
+import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../utils.js"; 
 
 const initializePassport = () => {
     // Configurar estrategia de autenticación local
@@ -81,36 +82,46 @@ const initializePassport = () => {
     });
 };
 
-export const generateAuthToken = (user) => {
-    const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '1h' });
+// Función para extraer cookies
+export const cookieExtractor = (req) => {
+    let token = null;
+    
+    if (req && req.cookies) {
+        token = req.cookies["jwtToken"];
+    }
+    
     return token;
 };
 
+// Funcion para generar tokens
+export const generateAuthToken = (user) => {
+    const token = jwt.sign({ _id: user._id }, config.jwtSecret, { expiresIn: '1h' });
+    return token;
+};
+
+// Funcion para validar tokens
 export const authToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    const cookieToken = req.cookies.jwtToken;
 
-    if (!authHeader) {
+    // Verificar si el token está presente en el encabezado de autorización o en la cookie jwtToken
+    const token = authHeader ? authHeader.split(" ")[1] : cookieToken;
+
+    if (!token) {
         return res.status(401).send({ status: "error", message: "No autorizado" });
     }
 
-    console.log(authHeader);
-
-    const token = authHeader.split(" ")[1];
-
-    // Error para ver, cada vez que realizo un logout, se produce el error de JsonWebTokenError: jwt malformed
-    jwt.verify(token, JWT_SECRET, (error, credentials) => {
-        console.log(error);
-
+    jwt.verify(token, config.jwtSecret, (error, credentials) => {
         if (error) {
             console.error('JWT Verification Error:', error);
-            // Handle the error appropriately
             return res.status(401).send({ status: "error", message: "Unauthorized" });
         }
 
         req.user = credentials.user;
         next();
-    })
-}
+    });
+};
+
 
 const auth = {
     initializePassport,

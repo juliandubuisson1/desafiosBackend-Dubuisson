@@ -1,17 +1,17 @@
-import express from "express"
-import mongoose from "mongoose"; 
-import mongoose from "mongoose"
+import express from "express";
+import mongoose from "mongoose";
 import http from "http";
 import Handlebars from "handlebars";
 import handlebars from "express-handlebars";
 import { Server } from "socket.io";
 import bodyParser from "body-parser";
-import __dirname from "./utils.js";
+import __dirname from "./util.js";
 import path from "path";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import FileStore from "session-file-store";
 import MongoStore from "connect-mongo";
+import cors from "cors";
 import passport from "./config/jwt.js";
 import router from "./routes.js";
 import auth from "./config/auth.js";
@@ -34,6 +34,9 @@ app.use(express.json());
 // Middleware para utilizar cookies
 app.use(cookieParser());
 
+// Middleware para usar cors
+app.use(cors()); 
+
 // Middleware para usar el session para autenticaciones de usuarios
 app.use(session({
     store: MongoStore.create({
@@ -45,6 +48,9 @@ app.use(session({
     saveUninitialized: false,
 }))
 
+// Rutas para productos y carritos
+//app.use("/api/products", productRouter);
+//app.use("/api/carts", cartRouter);
 
 mongoose.connect(MONGO_URL, {
     useNewUrlParser: true,
@@ -115,7 +121,6 @@ io.on('connection', socket => {
         io.emit("clearCart", clearCart);
     });
 });
-
 
 
 

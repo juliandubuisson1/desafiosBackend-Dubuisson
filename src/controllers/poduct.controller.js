@@ -1,5 +1,6 @@
-import Product from "../models/product.model.js";
-import Cart from "../models/cart.model.js";
+import Product from "../models/mongo_models/productsModel.js";
+import Cart from "../models/mongo_models/cartsModel.js";
+import User from "../models/mongo_models/Users.model.js";
 
 const productController = {
     getProducts: async (req, res) => {
@@ -63,7 +64,10 @@ const productController = {
             console.log(response);
 
             if (req.accepts('html')) {
-                return res.render('realTimeProducts', { response, Carts: carts, user, isAuthenticated });
+                res.render('realTimeProducts', { response, Carts: carts, user, isAuthenticated });
+            }
+            else {
+                res.json({ message: "Lista de productos:", response })
             }
 
         } catch (err) {
@@ -127,7 +131,6 @@ const productController = {
                 nextLink = `${req.protocol}://${req.get('host')}${req.baseUrl}${req.path}?page=${filter.nextPage}`;
             }
 
-
             // Construir la respuesta JSON
             const response = {
                 status: 'success',
@@ -147,18 +150,15 @@ const productController = {
                 },
             };
 
-            console.log({
-                response,
-                user,
-                isAuthenticated,
-            });
-
             if (req.accepts('html')) {
-                return res.render('category', {
+                res.render('category', {
                     response,
                     user,
                     isAuthenticated,
                 });
+            }
+            else {
+                res.json({ message: "Lista de productos por categoria:", response });
             }
         } catch (err) {
             console.error("Error al ver la categoria:", err);
@@ -167,9 +167,15 @@ const productController = {
     },
 
     addProduct: async (req, res) => {
-        const { title, brand, description, price, stock, category } = req.body;
+        const { title, brand, description, price, stock, category, userId } = req.body;
 
         try {
+            const user = await User.findById(userId).exec();
+
+            if (!user) {
+                return res.status(401).json({ error: "No esta autorizado" })
+            }
+
             const imageName = req.file ? req.file.filename : null;
 
             if (!imageName) {
@@ -184,6 +190,7 @@ const productController = {
                 stock,
                 category,
                 image: imageName,
+                user: userId,
             });
 
             await newProduct.save();
@@ -200,11 +207,23 @@ const productController = {
 
     deleteProduct: async (req, res) => {
         const productId = req.params.pid;
+        const { userId } = req.body;
 
         try {
+            const user = await User.findById(userId);
+
+            if (!user) {
+                return res.status(401).json({ error: "No esta autorizado" })
+            }
+
             const deleteProduct = await Product.deleteOne({ _id: productId }).lean();
 
             const products = await Product.find().lean();
+
+            // Verificar si el usuario que intenta actualizar el carrito es el propietario del carrito
+            if (deleteProduct.user.toString() !== userId) {
+                return res.status(403).json({ error: "No tienes permiso para actualizar este carrito" });
+            }
 
             if (deleteProduct.deletedCount === 0) {
                 return res.status(404).json({ error: "Producto no encontrado" });
