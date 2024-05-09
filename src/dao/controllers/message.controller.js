@@ -1,4 +1,4 @@
-import Message from "../models/mongo_models/messagesMode";
+import Message from "../../models/mongo_models/messagesMode.js";
 
 const messageController = {
     getMessages: async (req, res) => {

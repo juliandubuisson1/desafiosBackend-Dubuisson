@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import GitHubStrategy from "passport-github2";
 import jwt from "jsonwebtoken";
-import User from "../models/mongo_models/Users.model.js";
+import User from "../models/mongo_models/Users.model.js"
 import bcrypt from "bcrypt";
 import config from "./config.js";
 import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../utils.js"; 

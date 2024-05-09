@@ -1,7 +1,6 @@
 import express from "express"
-import passport from "passport";
 import { configureProductMulter } from "../util.js";
-import productController from "../controllers/product.controller.js";
+import productController from "../dao/controllers/product.controller.js";
 import { authToken } from "../config/auth.js";
 
 const productRouter = express.Router();
@@ -19,6 +18,9 @@ productRouter.get("/category/:category", productController.getProductCategory);
 
 // Manejar la solicitud para agregar un producto en tiempo real
 productRouter.post("/", authToken, imgUpload.single("image"), productController.addProduct);
+
+// Maneja la solicitud para actualizar el producto
+productRouter.put("/:pid", authToken, imgUpload.single("image"), productController.updateProduct);
 
 // Manejar la solicitud para la eliminación de un producto en tiempo real
 productRouter.delete('/:pid', authToken, productController.deleteProduct);

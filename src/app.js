@@ -16,6 +16,8 @@ import passport from "./config/jwt.js";
 import router from "./routes.js";
 import auth from "./config/auth.js";
 import { MONGO_URL } from "./util.js";
+import contactsRouter from "./dao/mongo/contacts.mongo.js"
+/* import MongoSingleton from "./config/mongoSingleton.js"; */
 
 Handlebars.registerHelper('eq', function (a, b, options) {
     return a === b ? options.fn(this) : options.inverse(this);
@@ -122,7 +124,7 @@ io.on('connection', socket => {
     });
 });
 
-
+/* MongoSingleton.getInstance(); */
 
 
 

@@ -1,94 +1,92 @@
-import cartsModel from "../models/cartsModel.js"
-import { isValidObjectId } from "../../utils.js"
+import CartRepository from "../../dao/repositories/cart.repository.js"
+import Product from "../../models/mongo_models/Users.model.js"
+import User from "../../models/mongo_models/User.model.js";
+import Cart from "../models/mongo_models/cart.model.js";
+import CartDTO from "../../dao/cart.dto.js";
 
-export default class CartsManagerMongo {
-    constructor() {
-        this.carts = cartsModel
-    }
-
-    async getCarts() {
+const cartService = {
+    getCartById: async (cartId, userId) => {
         try {
-            return await this.carts.find()
-        } 
-        catch (error) {
-            console.error(error)
-        }
-    }
+            const cart = await CartRepository.getCartById(cartId, userId);
 
-    async getCartById(id) {
+            return cart;
+        } catch (error) {
+            throw new Error("Error al obtener el carrito por ID: " + error.message);
+        }
+    },
+
+    addProductToCart: async (productId, userId) => {
         try {
-            const cart = await this.carts.findById(id)
-            if (!cart) throw new Error("Carrito no encontrado")
-            return cart
-        } 
-        catch (error) {
-            console.error("No se pudo encontrar el carrito",error)
-        }
-    }
-
-    async createCart() {
-        try {
-            const newCart = await this.carts.create({})
-            return newCart._id.toString()// Retorna el id del carrito creado convertido a string
-        }
-        catch (error) {
-            console.error("No se pudo agregar el carrito", error)
-        }
-    }
-
-    async addProductToCart(cid, pid) {
-        try {
-            if (!isValidObjectId(cid)) throw new Error("El ID del carrito no es válido")
-            if (!isValidObjectId(pid)) throw new Error("El ID del producto no es válido")
-            
-            //Buscar el carrito, si no existe, crearlo.
-            // let cart = await this.carts.findById(cid)
-            // if (!cart) {
-            //     cart = await this.carts.create({ _id: cid, products: [] })
-            // }
-
-            // Buscar el carrito, si no lo encuentra lanza error.
-            const cart = await this.carts.findById(cid)
-            if (!cart) throw new Error("Carrito no encontrado")
-            
-            //Buscar el producto, si lo encuentra le suma uno a la cantidad. Si no lo encuentra le asigna quantity = 1
-            const existingProductIndex = cart.products.findIndex(product => product._id.equals(pid))
-            if (existingProductIndex !== -1) {
-                cart.products[existingProductIndex].quantity++
-                return await cart.save()
-            } else {
-                cart.products.push({_id: pid, quantity: 1})
-                return await cart.save()
-            }
-        } 
-        catch (error) {
-            console.error("No se pudo agregar el producto al carrito", error)
-            throw error
-        }
-    }
+            const user = await User.findById(userId);
+            const product = await Product.findById(productId);
     
-    async deleteCartById(id) {
-        try {
-            if (!isValidObjectId(id)) throw new Error("El ID del carrito no es válido")
-            const cart = await this.carts.findById(id)
-            if (!cart) throw new Error("Carrito no encontrado")
-            return await this.carts.findByIdAndDelete(id)
+            if (!product) {
+                throw new Error("Producto no encontrado");
+            }
+    
+            if (product.stock < 1) {
+                throw new Error("Producto fuera de stock");
+            }
+    
+            // Crear un objeto de carrito DTO
+            const cartDTO = new CartDTO({
+                products: [{
+                    product: productId,
+                    productQuantity: 1,
+                    productPrice: product.price,
+                    productTotal: product.price * 1,
+                }],
+                total: product.price,
+                user: user,
+            });
+    
+            // Convertir el DTO a un modelo de Mongoose
+            const cartData = new Cart(cartDTO);
+    
+            // Guardar el modelo en la base de datos
+            const newCart = await cartData.save();
+    
+            return newCart;
+        } catch (error) {
+            throw new Error("Error al agregar producto al carrito: " + error.message);
         }
-        catch (error) {
-            console.error("No se pudo eliminar el carrito", error)
-            throw error
-        }
-    }
+    },    
 
-    async deleteProductFromCart(cid, pid) {
+    updateCart: async (cartId, products, total) => {
         try {
-            if (!isValidObjectId(cid)) throw new Error("El ID del carrito no es válido")
-            if (!isValidObjectId(pid)) throw new Error("El ID del producto no es válido")
-            //El método pull elimina un elemento del array que coincida con el valor especificado.
-            return await this.carts.findByIdAndUpdate(cid, { $pull: {products: { _id: pid } }})
+            const cart = await CartRepository.updateCart(cartId, products, total);
+            return cart;
+        } catch (error) {
+            throw new Error("Error al actualizar el carrito: " + error.message);
         }
-        catch (error) {
-            console.error("No se pudo eliminar el producto del carrito", error)
+    },
+
+    updateProductQuantityInCart: async (cartId, productId, quantity) => {
+        try {
+            const cart = await CartRepository.updateProductQuantityInCart(cartId, productId, quantity);
+            return cart;
+        } catch (error) {
+            throw new Error("Error al actualizar la cantidad del producto en el carrito: " + error.message);
+        }
+    },
+
+    deleteProductFromCart: async (cartId, productId) => {
+        try {
+            const cart = await CartRepository.deleteProductFromCart(cartId, productId);
+            return cart;
+        } catch (error) {
+            throw new Error("Error al eliminar el producto del carrito: " + error.message);
+        }
+    },
+
+    clearCart: async (cartId) => {
+        try {
+            const cart = await CartRepository.clearCart(cartId);
+            return cart;
+        } catch (error) {
+            throw new Error("Error al vaciar el carrito: " + error.message);
         }
     }
-}
+};
+
+export default cartService;

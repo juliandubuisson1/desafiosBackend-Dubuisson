@@ -1,62 +1,113 @@
-import productsModel from "../models/productsModel.js"
+import productRepository from "../../dao/repositories/product.repository.js"
+import ProductDTO from "../../dao/DTO/product.dto.js"
+import User from "../../models/mongo_models/Users.model.js"
 
-export default class ProductsManagerDao {
-    constructor() {
-        this.model = productsModel
-    }
-
-    async getProducts() {
+const productService = {
+    getProducts: async (query, currentPage) => {
         try {
-            return await this.model.find()
-        }
-        catch(error) {
-            console.error(error)
-        }
-    }
-
-    async getProductById(id) {
-        try {
-            const product = await this.model.findById(id)
-            //Si el producto no existe, devuelve un mensaje de error. Si existe, devuelve el producto.
-            if (!product) throw new Error("Producto no encontrado")
-            return product
+            const products = await productRepository.getAllProducts(query, currentPage);
+            return products;
         }
         catch (error) {
-            console.error("Producto no encontrado",error)
+            throw new Error("Error al obtener los productos: " + error.message);
         }
-    }
+    },
 
-    async addProduct(product) {
+    getProductDetail: async (productId) => {
         try {
-            const newProduct = new this.model(product)
-            return await newProduct.save()  //Guarda el producto en la base de datos.
+            const productDetail = await productRepository.getProductById(productId);
+            return productDetail;
+        } catch (error) {
+            throw new Error("Error al obtener el detalle del producto: " + error.message);
+        }
+    },
+
+    getProductCategory: async (category, query, currentPage) => {
+        try {
+            const productCategory = await productRepository.getProductsByCategory(category, query, currentPage);
+            return productCategory;
         }
         catch (error) {
-            console.error("Error al agregar producto", error)
+            throw new Error("Error al obtener los productos por categoria: " + error.message);
         }
-    }
+    },
 
-    async updateProduct(id, product) {
+    addProduct: async (productData, req) => {
+        const { title, brand, description, price, stock, category, userId } = productData;
+
         try {
-            const updatedProduct = await this.model.findByIdAndUpdate(id, product, { new: true })//{ new: true } configuración para que retorne el documento actualizado.
-            //Si no existe, devuelve un mensaje de error. Si existe, devuelve el producto actualizado.
-            if (!updatedProduct) throw new Error("Producto no encontrado")
-            return updatedProduct  
+            const user = await User.findById(userId).exec();
+
+            // Si el usuario no esta logueado o registrado
+            if (!user) {
+                throw new Error("No está logueado o registrado");
+            }
+
+            const imageName = req.file ? req.file.filename : null;
+
+            if (!imageName) {
+                throw new Error('No se proporcionó una imagen válida');
+            }
+
+            // Crear instancia DTO
+            const productDTO = new ProductDTO(title, brand, description, price, stock, category, imageName, userId);
+
+            // Paso directamente el DTO al repositorio
+            const newProduct = await productRepository.createProduct(productDTO);
+
+            return newProduct;
+        } catch (error) {
+            throw new Error("Error al guardar el producto: " + error.message);
+        }
+    },
+
+    updateProduct: async (updatedProductData, req, productId) => {
+        const { title, brand, description, price, stock, category, userId } = updatedProductData;
+
+        try {
+            const imageName = req.file ? req.file.filename : null;
+
+            if (!imageName) {
+                throw new Error('No se proporcionó una imagen válida');
+            }
+
+            // Crear instancia DTO
+            const updateProductDTO = new ProductDTO(title, brand, description, price, stock, category, imageName, userId);
+
+            // Paso directamente el DTO al repositorio
+            const updateProduct = await productRepository.updateProduct(updateProductDTO);
+
+            return updateProduct;
         }
         catch (error) {
-            console.error("Error al actualizar producto", error)
-        }
-    }
 
-    async deleteProductById(id) {
+        }
+    },
+
+    deleteProduct: async (productId, userId) => {
         try {
-            const deletedProduct = await this.model.findByIdAndDelete(id)
-            //Si no existe, devuelve un mensaje de error. Si existe, devuelve el producto eliminado.
-            if (!deletedProduct) throw new Error("Producto no encontrado")
-            return deletedProduct  //Devuelve el producto eliminado.
+            const product = await productRepository.getProductById(productId);
+    
+            if (!product) {
+                throw new Error("Producto no encontrado");
+            }
+    
+            // Verificar si el usuario que intenta borrar el producto es el propietario del producto
+            if (product.user.toString() !== userId) {
+                throw new Error("No tienes permiso para borrar el producto");
+            }
+    
+            const deleteResult = await productRepository.deleteProductById(productId);
+    
+            if (!deleteResult) {
+                throw new Error("Error al eliminar el producto");
+            }
+    
+            return true;
+        } catch (error) {
+            throw new Error("Error al eliminar el producto: " + error.message);
         }
-        catch (error) {
-            console.error("Error al eliminar producto", error)
-        }
-    } 
-}
+    }    
+};
+
+export default productService;
