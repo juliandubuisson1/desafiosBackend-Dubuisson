@@ -15,13 +15,25 @@ import cors from "cors";
 import passport from "./config/jwt.js";
 import router from "./routes.js";
 import auth from "./config/auth.js";
-import { MONGO_URL } from "./util.js";
-import contactsRouter from "./dao/mongo/contacts.mongo.js"
-/* import MongoSingleton from "./config/mongoSingleton.js"; */
+import { MONGO_URL, EMAIL_USERNAME, EMAIL_PASSWORD } from "./utils.js";
 
 Handlebars.registerHelper('eq', function (a, b, options) {
     return a === b ? options.fn(this) : options.inverse(this);
 });
+
+// Nodemailer
+const dataTransport = {
+    service: "gmail",
+    host: "smtp.gmail.com",
+    secure: false,
+    port: 587,
+    auth: {
+        user: EMAIL_USERNAME,
+        pass: EMAIL_PASSWORD
+    }
+}
+
+const transport = nodemailer.createTransport(dataTransport);
 
 const fileStore = FileStore(session);
 const app = express();

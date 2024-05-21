@@ -1,12 +1,18 @@
-import Message from "../../models/mongo_models/messagesMode.js";
+import Message from "../../models/mongo_models/messagesMode.js"
+import User from "../../models/mongo_models/Users.model.js"
 
 const messageController = {
     getMessages: async (req, res) => {
+        const user = req.session.user;
+        const isAuthenticated = req.session.isAuthenticated;
+        const jwtToken = req.session.token;
+        const userRole = req.session.userRole;
+
         try {
-            const messages = await Message.find().lean();
+            const messages = await Message.find().populate('user', 'email').lean();
 
             if (req.accepts('html')) {
-                return res.render('chat', { messages });
+                return res.render('chat', { messages, user, isAuthenticated, jwtToken, userRole });
             }
             res.json(messages);
         } catch (err) {
@@ -16,11 +22,16 @@ const messageController = {
     },
 
     addMessage: async (req, res) => {
-        const { user, text } = req.body;
+        const { userEmail, text } = req.body;
 
         try {
+            const user = await User.findOne({ email: userEmail });
+            if (!user) {
+                return res.status(404).json({ error: 'Usuario no encontrado' });
+            }
+
             const newMessage = new Message({
-                user,
+                user: user._id,
                 text,
             });
 

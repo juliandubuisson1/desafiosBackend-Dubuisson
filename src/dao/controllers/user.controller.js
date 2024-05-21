@@ -1,12 +1,11 @@
-import userService from "../../services/file_services/userManager.js";
-
+import userServices from "../../services/file_services/userManager.js"
 
 const userController = {
     getUserById: async (req, res) => {
         const userId = req.params.uid;
         const isAuthenticated = req.session.isAuthenticated;
         const jwtToken = req.session.token;
-    
+
         try {
             const user = await userService.getUserById(userId);
 
@@ -17,7 +16,7 @@ const userController = {
             console.error("Error al obtener usuario por ID:", error);
             res.status(500).json({ error: "Error interno del servidor" });
         }
-    },    
+    },
 
     getLogin: async (req, res) => {
         try {
@@ -40,12 +39,13 @@ const userController = {
             req.session.userId = user._id;
             req.session.user = user;
             req.session.isAuthenticated = true;
+            req.session.userRole = user.role;
 
             console.log("Datos del login:", user, "token:", access_token);
 
             res.cookie("jwtToken", access_token, {
                 httpOnly: true,
-            }).send({ status: "Success", message: user, access_token, userId: user._id });
+            }).send({ status: "Success", message: user, access_token, userId: user._id, userRole: user.role });
         } catch (error) {
             console.error("Error al iniciar sesión:", error);
             return res.status(500).json({ error: "Error interno del servidor" });
@@ -73,12 +73,13 @@ const userController = {
             req.session.userId = newUser._id;
             req.session.user = newUser;
             req.session.isAuthenticated = true;
+            req.session.userRole = newUser.role;
 
             console.log("Datos del registro:", newUser, "token:", access_token);
 
             res.cookie("jwtToken", access_token, {
                 httpOnly: true,
-            }).send({ status: "Success", message: newUser, access_token, userId: newUser._id });
+            }).send({ status: "Success", message: newUser, access_token, userId: newUser._id, userRole: newUser.role });
 
         } catch (error) {
             console.error("Error al registrar usuario:", error);
@@ -114,10 +115,11 @@ const userController = {
             req.session.userId = user._id;
             req.session.user = user;
             req.session.isAuthenticated = true;
+            req.session.userRole = user.role;
 
             res.cookie("jwtToken", access_token, {
                 httpOnly: true,
-            }).send({ status: "Success", message: user, access_token, userId: user._id });
+            }).send({ status: "Success", message: user, access_token, userId: user._id, userRole: user.role });
         } catch (error) {
             console.error('Error en el callback de GitHub:', error);
             res.status(500).json({ error: "Error interno del servidor" });
@@ -127,7 +129,7 @@ const userController = {
     updateUser: async (req, res) => {
         const userId = req.params.uid;
         const updatedUserData = req.body;
-    
+
         try {
             const updatedUser = await userService.updateUser(userId, updatedUserData);
             res.json(updatedUser);
@@ -135,15 +137,16 @@ const userController = {
             console.error("Error al actualizar usuario:", error);
             res.status(500).json({ error: "Error interno del servidor" });
         }
-    },    
+    },
 
     getUpdateUser: async (req, res) => {
+        const user = req.session.user;
         const isAuthenticated = req.session.isAuthenticated;
         const jwtToken = req.session.token;
-    
+
         try {
             const updateUserView = await userService.getUpdateUser();
-            res.render(updateUserView, { isAuthenticated, jwtToken });
+            res.render(updateUserView, { isAuthenticated, jwtToken, user });
         } catch (error) {
             console.error("Error al obtener la vista de editar usuario:", error);
             res.status(500).json({ error: "Error interno del servidor" });
@@ -167,7 +170,7 @@ const userController = {
     getChangePassword: async (req, res) => {
         const isAuthenticated = req.session.isAuthenticated;
         const jwtToken = req.session.token;
-    
+
         try {
             const changePasswordView = await userService.getChangePassword();
             res.render(changePasswordView, { isAuthenticated, jwtToken });

@@ -62,7 +62,7 @@ const productRepository = {
 
     getProductById: async (productId) => {
         try {
-            const product = await Product.findById(productId).lean();
+            const product = await Product.findById(productId).populate('user').lean();
             return product;
         } catch (error) {
             throw new Error("Error al obtener el producto por ID: " + error.message);
@@ -136,12 +136,12 @@ const productRepository = {
 
     updateProduct: async (productId, updatedProductData) => {
         try {
-            const updatedProduct = await Product.findByIdAndUpdate(productId, updatedProductData, { new: true });
+            const updatedProduct = await Product.findByIdAndUpdate(productId, { $set: updatedProductData }, { new: true });
             return updatedProduct;
         } catch (error) {
             throw new Error("Error al actualizar el producto: " + error.message);
         }
-    },
+    },    
 
     deleteProductById: async (productId) => {
         try {

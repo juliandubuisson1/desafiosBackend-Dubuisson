@@ -16,7 +16,7 @@ const userRepository = {
                 const user = await User.findById(userId).lean();
                 return user;
             } else {
-                const user = await User.findById(userId);
+                const user = await User.findById(userId).populate('createdProducts');
                 return user;
             }
         } catch (error) {
@@ -32,7 +32,7 @@ const userRepository = {
         } catch (error) {
             throw new Error("Error al crear usuario: " + error.message);
         }
-    }
+    },
 };
 
 export default userRepository;

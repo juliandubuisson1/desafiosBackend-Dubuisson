@@ -1,19 +1,28 @@
 import mongoose from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 
-const userSchema = new mongoose.Schema({
-    first_name: String,
-    last_name: String,
-    email: String,
-    age: Number,
-    password: String,
-    cart:
-    {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Cart"
+const productSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        index: true,
     },
-    role: { type: String, default: "user" },
+    brand: String,
+    description: String,
+    price: Number,
+    stock: Number,
+    category: String,
+    image: String,
+    cart: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Cart'
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }
 });
 
-const User = mongoose.model("User", userSchema);
+productSchema.plugin(mongoosePaginate);
+const Product = mongoose.model("Product", productSchema);
 
-export default User;
+export default Product;

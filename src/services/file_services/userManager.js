@@ -12,7 +12,7 @@ const userService = {
         } catch (error) {
             throw new Error("Error al obtener usuario por ID: " + error.message);
         }
-    },
+    }, 
 
     getLogin: async () => {
         return "login";
