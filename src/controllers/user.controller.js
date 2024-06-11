@@ -1,4 +1,8 @@
-import userServices from "../../services/file_services/userManager.js"
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+import { EMAIL_USERNAME } from "../util.js";
+import userService from "../dao/services/user.service.js";
+import { transport } from "../app.js";
 
 const userController = {
     getUserById: async (req, res) => {
@@ -153,6 +157,83 @@ const userController = {
         }
     },
 
+    getForgotPassword: async (req, res) => {
+        try {
+            const forgotView = await userService.getForgotPassword();
+            res.render(forgotView);
+        } catch (error) {
+            console.error("Error al obtener la vista de olvidar contraseña:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },
+
+    requestPasswordReset: async (req, res) => {
+        const { email } = req.body;
+        try {
+            const user = await userService.getUserByEmail(email);
+            if (!user) {
+                return res.status(404).json({ error: "Usuario no encontrado" });
+            }
+
+            const resetToken = crypto.randomBytes(20).toString('hex');
+            const resetTokenExpires = Date.now() + 3600000;
+
+            await userService.savePasswordResetToken(user._id, resetToken, resetTokenExpires);
+
+            const resetUrl = `http://${req.headers.host}/api/sessions/resetPassword/${resetToken}`;
+            const mailOptions = {
+                to: user.email,
+                from: EMAIL_USERNAME,
+                subject: 'Restablecimiento de contraseña',
+                text: `Está recibiendo esto porque usted (o alguien más) ha solicitado el restablecimiento de la contraseña de su cuenta.\n\n
+                Haga clic en el siguiente enlace, o péguelo en su navegador para completar el proceso:\n\n
+                ${resetUrl}\n\n
+                Si no solicitó esto, ignore este correo y su contraseña permanecerá sin cambios.\n`
+            };
+
+            await transport.sendMail(mailOptions);
+
+            res.status(200).json({ message: 'Correo de restablecimiento de contraseña enviado con éxito' });
+        } catch (error) {
+            console.error("Error al solicitar restablecimiento de contraseña:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },
+
+    getResetPassword: async (req, res) => {
+        const { token } = req.params;
+
+        try {
+            const resetPasswordView = await userService.getResetPassword();
+            res.render(resetPasswordView);
+        } catch (error) {
+            console.error("Error al obtener la vista de reset contraseña:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },
+
+    resetPassword: async (req, res) => {
+        const { token } = req.params;
+        const { newPassword } = req.body;
+        const userId = req.session.userId;
+
+        try {
+            const user = await userService.getUserByResetToken(token);
+
+            if (!user || user.resetTokenExpires < Date.now()) {
+                return res.status(400).json({ error: "Token de restablecimiento inválido o expirado" });
+            }
+
+            await userService.updatePassword(userId, newPassword);
+            await userService.clearPasswordResetToken(userId);
+
+            res.status(200).json({ message: "Contraseña restablecida con éxito" });
+        } catch (error) {
+            console.error("Error al restablecer la contraseña:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },
+
     changePassword: async (req, res) => {
         const userId = req.params.uid;
         const { oldPassword, newPassword } = req.body;
@@ -179,6 +260,32 @@ const userController = {
             res.status(500).json({ error: "Error interno del servidor" });
         }
     },
+
+    changeUserRole: async (req, res) => {
+        const userId = req.params.uid;
+        const { newRole } = req.body;
+    
+        try {
+            const updatedUser = await userService.changeUserRole(userId, newRole);
+            res.json(updatedUser);
+        } catch (error) {
+            console.error("Error al cambiar el rol del usuario:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },    
+    
+    getChangeUserRole: async (req, res) => {
+        const userId = req.params.uid;
+        const user = await userService.getUserById(userId);
+        try {
+            const changeUserRoleView = await userService.getChangeUserRole();
+            res.render(changeUserRoleView, { user })
+        } catch (error) {
+            console.error("Error al obtener la vista de cambio de role:", error);
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    },
+    
 
     logOut: async (req, res) => {
         try {

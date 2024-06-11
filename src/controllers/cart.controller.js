@@ -1,4 +1,4 @@
-import cartService from "../../services/file_services/cartManager.js";
+import cartService from "../dao/services/cart.service.js";
 
 const cartController = {
     getCartById: async (req, res) => {
@@ -25,9 +25,10 @@ const cartController = {
     addProductToCart: async (req, res) => {
         const { productId } = req.body;
         const userId = req.session.userId;
+        const userRole = req.session.userRole
 
         try {
-            const cart = await cartService.addProductToCart(productId, userId);
+            const cart = await cartService.addProductToCart(productId, userId, userRole);
 
             return res.json({ message: "Producto agregado al carrito correctamente", cartItemId: cart._id });
         } catch (error) {

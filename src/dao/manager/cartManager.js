@@ -1,5 +1,5 @@
 import fs from "fs";
-import { getCartFilePath } from "../utils.js";
+import { getCartFilePath } from "../../util.js";
 
 const jsonFilePath = getCartFilePath();
 

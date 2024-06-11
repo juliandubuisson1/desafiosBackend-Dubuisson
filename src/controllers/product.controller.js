@@ -1,5 +1,6 @@
-import productService from "../../services/file_services/productManager.js"
-import Cart from "../../models/mongo_models/cartsModel.js";
+import productService from "../dao/services/product.service.js";
+import cartService from "../dao/services/cart.service.js";
+import userService from "../dao/services/user.service.js";
 
 const productController = {
     getProducts: async (req, res) => {
@@ -12,7 +13,7 @@ const productController = {
         const userRole = req.session.userRole;
 
         try {
-            const carts = await Cart.find({user: userId}).lean();
+            const carts = await cartService.getCartByUser(userId);
 
             const response = await productService.getProducts({ category, brand, sort }, currentPage);
 
@@ -87,11 +88,21 @@ const productController = {
 
     updateProduct: async (req, res) => {
         const productId = req.params.pid;
+        const productUpdateData = req.body;
+        const userId = req.session.userId;
+        const userRole = req.session.userRole;
     
         try {
-            const updatedProduct = await productService.updateProduct(productId, req);
+            const product = await productService.getProductDetail(productId);
+            const user = await userService.getUserById(userId);
     
-            return res.json({ message: "Producto actualizado!", product: updatedProduct });
+            if (userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() == product.owner._id.toString())) {
+                const updatedProduct = await productService.updateProduct(productId, req, productUpdateData, userId);
+    
+                return res.json({ message: "Producto actualizado!", product: updatedProduct });
+            } else {
+                return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+            }
         } catch (err) {
             console.error('Error:', err);
             return res.status(500).json({ error: "Error en la base de datos", details: err.message });
@@ -118,16 +129,24 @@ const productController = {
 
     deleteProduct: async (req, res) => {
         const productId = req.params.pid;
-
+        const userId = req.session.userId;
+        const userRole = req.session.userRole;
+    
         try {
-            await productService.deleteProduct(productId);
-
-            return res.json({ message: "Producto eliminado!" });
+            const product = await productService.getProductDetail(productId);
+            const user = await userService.getUserById(userId);
+    
+            if (userRole === 'admin' || (userRole === 'premium' && user && user._id.toString() == product.owner._id.toString())) {
+                await productService.deleteProduct(productId);
+                return res.json({ message: "Producto eliminado!" });
+            } else {
+                return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+            }
         } catch (err) {
             console.error('Error:', err);
             return res.status(500).json({ error: "Error en la base de datos", details: err.message });
         }
-    }
+    }  
 }
 
 export default productController;

@@ -1,5 +1,5 @@
 import fs from "fs";
-import { getProductsFilePath } from "../utils.js";
+import { getProductsFilePath } from "../../util";
 
 // Ruta del archivo JSON
 const jsonFilePath = getProductsFilePath();
