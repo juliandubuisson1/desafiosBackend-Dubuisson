@@ -150,3 +150,7 @@ const productController = {
 }
 
 export default productController;
+    }  
+}
+
+export default productController;
