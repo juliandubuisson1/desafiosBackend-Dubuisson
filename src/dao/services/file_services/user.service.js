@@ -25,7 +25,7 @@ const userService = {
 
     login: async (email, password) => {
         return new Promise((resolve, reject) => {
-            passport.authenticate("local", (err, user, info) => {
+            passport.authenticate("local", async (err, user, info) => {
                 if (err) {
                     logger.error(`Error durante la autenticacion del login: ${err.message}`);
                     return reject(err);
@@ -38,6 +38,10 @@ const userService = {
                     user.role = "admin";
                 }
 
+                // Actualizar el campo last_connection
+                user.last_connection = new Date();
+                await user.save();
+
                 const access_token = generateAuthToken(user);
                 logger.info(`User iniciado sesión exitosamente: ${email}`);
                 resolve({ user, access_token });
@@ -49,7 +53,7 @@ const userService = {
         return "register";
     },
 
-    register: async (userData) => {
+    register: async (userData, file) => {
         const { first_name, last_name, email, age, password } = userData;
         try {
             logger.info(`Registrando nuevo user: ${email}`);
@@ -59,8 +63,15 @@ const userService = {
                 throw new Error("El usuario ya existe");
             }
 
+            const imageName = file ? file.filename : null;
+
+            if (!imageName) {
+                logger.warn(`Imagen invalida para el perfil del usuario: ${imageName}`);
+                throw { code: 'INVALID_IMAGE' };
+            }
+
             const hashedPassword = await bcrypt.hash(password, 10);
-            const newUserDTO = new UserDTO(first_name, last_name, email, age, hashedPassword);
+            const newUserDTO = new UserDTO(first_name, last_name, email, age, hashedPassword, imageName);
             const newUser = { ...newUserDTO };
             const createdUser = await userRepository.createUser(newUser);
             const access_token = generateAuthToken(createdUser);
@@ -211,26 +222,90 @@ const userService = {
         return "resetPassword";
     },
 
-    changeUserRole: async (userId, newRole) => {
+    changePremiumRole: async (userId, files) => {
         try {
             const user = await userRepository.findUser(userId);
             if (!user) {
                 throw new Error("El usuario no existe");
             }
-            user.role = newRole;
+
+            if (user.role === "user") {
+                // Verificar si todos los archivos requeridos están presentes
+                if (!files || !files.identificacion || !files.comprobanteDomicilio || !files.comprobanteCuenta) {
+                    throw new Error("Se requiere la subida de documentación completa para cambiar el rol a premium");
+                }
+
+                // Procesar cada archivo de forma individual
+                await userRepository.uploadDocs(userId, files.identificacion);
+                await userRepository.uploadDocs(userId, files.comprobanteDomicilio);
+                await userRepository.uploadDocs(userId, files.comprobanteCuenta);
+
+                user.role = "premium"
+            }
+
+            else if (user.role === "premium") {
+                user.role = "user"
+            }
+
+            // Guardar los cambios en la base de datos
             await user.save();
             return user;
         } catch (error) {
             throw new Error("Error al cambiar el rol del usuario: " + error.message);
         }
-    },    
+    },
+
+    getChangePremiumRole: async () => {
+        return "changePremiumRole";
+    },
+
+    changeUserRole: async (userId) => {
+        try {
+            const user = await userRepository.findUser(userId);
+            if (!user) {
+                throw new Error("El usuario no existe");
+            }
+
+            if (user.role === "premium") {
+                user.role = "user"
+            }
+
+            else {
+                logger.warn("Acceso no autorizado");
+            }
+
+            // Guardar los cambios en la base de datos
+            await user.save();
+            return user;
+        } catch (error) {
+            throw new Error("Error al cambiar el rol del usuario: " + error.message);
+        }
+    },
 
     getChangeUserRole: async () => {
         return "changeUserRole";
     },
 
+    getUplaodDocs: async () => {
+        return "uploadDocs";
+    },
+
+    uploadDocs: async (userId, files) => {
+        try {
+            logger.info(`Subiendo documentos para el usuario: ${userId}`);
+            const documents = await userRepository.uploadDocs(userId, files);
+            logger.info(`Documentos subidos exitosamente para el usuario: ${userId}`);
+            return documents;
+        } catch (error) {
+            logger.error(`Error al subir documentos para el usuario: ${userId} - ${error.message}`);
+            throw new Error("Error al subir documentos: " + error.message);
+        }
+    },
+
     logOut: async (res, req) => {
         try {
+            const userId = req.session.userId;
+            await userRepository.updateUser(userId, { last_connection: new Date() });
             logger.info(`Logging out user: ${req.session.userId}`);
             req.session.userId = null;
             req.session.user = null;
