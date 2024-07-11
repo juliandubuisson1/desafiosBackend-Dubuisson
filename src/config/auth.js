@@ -2,11 +2,10 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import GitHubStrategy from "passport-github2";
 import jwt from "jsonwebtoken";
-import User from "../models/mongo_models/Users.model.js"
+import User from "../dao/models/user.model.js";
 import bcrypt from "bcrypt";
 import config from "./config.js";
-import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../utils.js"; 
-
+import { CLIENT_ID, CLIENT_SECRET, CALLBACK_URL } from "../util.js"; 
 
 const initializePassport = () => {
     // Configurar estrategia de autenticación local
@@ -162,6 +161,15 @@ export const isUserOrPremium = (req, res, next) => {
 
 export const isPremiumOrAdmin = (req, res, next) => {
     if(req.user && req.user.role === 'premium' || req.user.role === 'admin') {
+        next();
+    }
+    else {
+        return res.status(403).json({ error: 'Acceso no autorizado' });
+    }
+}
+
+export const isAll = (req, res, next) => {
+    if(req.user && req.user.role === 'admin' || req.user.role === 'premium' || req.user.role === 'user') {
         next();
     }
     else {
